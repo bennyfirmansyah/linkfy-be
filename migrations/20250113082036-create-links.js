@@ -58,7 +58,10 @@ module.exports = {
     await queryInterface.addIndex('links', ['id_user']);
     await queryInterface.addIndex('links', ['url']);
     await queryInterface.addIndex('links', ['createdAt']);
-    await queryInterface.addIndex('links', ['vector']);
+    await queryInterface.addIndex('links', ['vector'],{
+      using: 'gin',
+    }
+    );
     await queryInterface.addIndex('links', ['vector_metadata']);
     await queryInterface.addIndex('links', ['visibilitas']);
   },
