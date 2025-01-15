@@ -1,4 +1,4 @@
-const { Sequelize } = require('sequelize');
+const { Sequelize, Op } = require('sequelize');
 const { Links, Users, ShareLink } = require('../../models');
 
 const listLink = async (req, res) => {
@@ -7,11 +7,17 @@ const listLink = async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
     const offset = (page - 1) * limit;
+    const search = req.query.search || '';
 
     try {
         // Base query configuration
         const baseQueryConfig = {
             attributes: ['id', 'judul', 'url', 'deskripsi', 'gambar', 'visibilitas', 'createdAt'],
+            where: {
+                judul: {
+                    [Op.iLike]: `%${search}%`
+                }
+            },
             limit,
             offset,
             order: [['createdAt', 'DESC']]
@@ -44,7 +50,12 @@ const listLink = async (req, res) => {
             }
             : {
                 ...baseQueryConfig,
-                where: { id_user: userId },
+                where: { 
+                    id_user: userId,
+                    judul: {
+                        [Op.iLike]: `%${search}%`
+                    }
+                },
                 include: [shareLinkInclude]
             };
 
