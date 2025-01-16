@@ -9,7 +9,7 @@ const refreshAccessToken = async (req, res) => {
     }
   
     try {
-      jwt.verify(refreshToken, JWT_SECRET, (err, decoded) => {
+      jwt.verify(refreshToken, JWT_SECRET, (err, user) => {
         if (err) {
           return res.status(403).json({ error: "Invalid or expired refresh token" });
         }
