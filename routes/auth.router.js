@@ -6,7 +6,7 @@ var { refreshAccessToken } = require('../controllers/auth/refreshAccessToken.con
 var { logout } = require('../controllers/auth/logout.controller');
 
 router.post('/login', login);
-router.post('/refresh', refreshAccessToken);
+router.post('/refresh-token', refreshAccessToken);
 router.post('/logout', auth(['admin','user']), logout);
 
 module.exports = router;
