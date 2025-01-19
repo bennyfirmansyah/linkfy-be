@@ -23,6 +23,12 @@ class TextVectorizer {
     ]);
   }
 
+  isStopwordOnly(text) {
+    const cleanedText = this.cleanText(text);
+    const tokens = tokenizer.tokenize(cleanedText);
+    return tokens.length > 0 && tokens.every(token => this.stopwords.has(token));
+  }
+
   cleanText(text) {
     if (!text) return '';
     return text

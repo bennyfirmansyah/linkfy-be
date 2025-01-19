@@ -1,12 +1,7 @@
-const {
-  Users,
-  Links,
-  ShareLink,
-  Riwayat,
-  RiwayatLink,
-} = require("../../models");
+const { Users, Links, ShareLink, Riwayat } = require("../../models");
 const { Sequelize, Op } = require("sequelize");
 const textVectorizer = require("../../utils/textVectorizer.utils");
+require("dotenv").config();
 
 const cariLink = async (req, res) => {
   const userId = req.user.id;
@@ -14,17 +9,27 @@ const cariLink = async (req, res) => {
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = (page - 1) * limit;
   const { q: searchQuery } = req.query;
-
   try {
-    if (!searchQuery) {
-      return res.status(400).json({ message: "Query tidak valid" });
+
+    if (textVectorizer.isStopwordOnly(searchQuery)) {
+      return res.json({
+        status: true,
+        message: "Data link berhasil didapatkan",
+        totalData: 0,
+        totalPage: 1,
+        currentPage: page,
+        data: [],
+        metadata: {
+          searchTerms: [],
+          queryVector: {},
+        },
+      });
     }
 
-    // Generate vector dari query pencarian
     const queryVector = textVectorizer.generateVector(searchQuery, "");
 
     // Simpan riwayat pencarian
-    const riwayat = await Riwayat.create({
+    await Riwayat.create({
       id_user: userId,
       query: searchQuery,
     });
@@ -84,6 +89,7 @@ const cariLink = async (req, res) => {
         "gambar",
         "visibilitas",
         "createdAt",
+        "updatedAt",
         "vector",
         "id_user",
         [
@@ -100,9 +106,9 @@ const cariLink = async (req, res) => {
           Sequelize.literal(`(
                         SELECT COUNT(*)
                         FROM riwayat_links rl
-                        INNER JOIN riwayats r ON r.id = rl.id_riwayat
+                        INNER JOIN users r ON r.id = rl.id_user
                         WHERE rl.id_link = "Links".id
-                        AND r.id_user = '${userId}'
+                        AND r.id = '${userId}'
                     )`),
           "user_clicks",
         ],
@@ -110,7 +116,7 @@ const cariLink = async (req, res) => {
           Sequelize.literal(`(
                         SELECT COUNT(*)
                         FROM riwayat_links rl
-                        INNER JOIN riwayats r ON r.id = rl.id_riwayat
+                        INNER JOIN users r ON r.id = rl.id_user
                         WHERE rl.id_link = "Links".id
                     )`),
           "total_clicks",
@@ -197,13 +203,6 @@ const cariLink = async (req, res) => {
 
         return getScore(b) - getScore(a);
       });
-
-    if (results.length === 0) {
-      return res.status(404).json({
-        status: false,
-        message: "Tidak ada link yang cocok ditemukan",
-      });
-    }
 
     // Pagination dan hasil akhir
     const totalData = results.length;

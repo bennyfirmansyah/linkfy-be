@@ -1,5 +1,5 @@
-const { Links, RiwayatLink, Riwayat, ShareLink } = require('../../models');
-const { Sequelize, Op } = require('sequelize');
+const { Links, RiwayatLink, Riwayat, ShareLink, Users } = require('../../models');
+const {  Op } = require('sequelize');
 
 const klikLink = async (req, res) => {
     const userId = req.user.id;
@@ -34,21 +34,11 @@ const klikLink = async (req, res) => {
             });
         }
 
-        const latestRiwayat = await Riwayat.findOne({
-            where: { id_user: userId },
-            order: [['createdAt', 'DESC']],
-        });
-        if (!latestRiwayat) {
-            return res.status(404).json({
-                success: false,
-                message: 'Riwayat tidak ditemukan'
-            });
-        }
-
+        const user = await Users.findByPk(userId);
         // Catat riwayat klik
         await RiwayatLink.create({
             id_link: linkId,
-            id_riwayat: latestRiwayat.id,
+            id_user: user.id,
         });
 
         return res.json({

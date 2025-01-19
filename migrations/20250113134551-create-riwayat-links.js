@@ -19,11 +19,11 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      id_riwayat: {
+      id_user: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
-          model: 'riwayats',
+          model: 'users',
           key: 'id'
         },
         onDelete: 'CASCADE',
@@ -41,12 +41,12 @@ module.exports = {
       }
     });
     await queryInterface.addIndex('riwayat_links', ['id_link']);
-    await queryInterface.addIndex('riwayat_links', ['id_riwayat']);
+    await queryInterface.addIndex('riwayat_links', ['id_user']);
     await queryInterface.addIndex('riwayat_links', ['createdAt']);
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.removeIndex('riwayat_links', ['id_link']);
-    await queryInterface.removeIndex('riwayat_links', ['id_riwayat']);
+    await queryInterface.removeIndex('riwayat_links', ['id_user']);
     await queryInterface.removeIndex('riwayat_links', ['createdAt']);
     await queryInterface.dropTable('riwayat_links');
   }
