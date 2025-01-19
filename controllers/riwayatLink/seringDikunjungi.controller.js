@@ -1,25 +1,11 @@
-const { RiwayatLink, Links, Riwayat } = require("../../models");
+const { RiwayatLink, Links } = require("../../models");
 const { Sequelize, Op } = require("sequelize");
 
 const seringDikunjungi = async (req, res) => {
   const userId = req.user.id;
   try {
-    const riwayat = await Riwayat.findAll({
-      where: { id_user: userId },
-    });
-
-    // Extract riwayat IDs
-    const riwayatIds = riwayat.map((r) => r.id);
-
-    if (riwayatIds.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Riwayat tidak ditemukan",
-      });
-    }
-
     const riwayatLink = await RiwayatLink.findAll({
-      where: { id_riwayat: { [Op.in]: riwayatIds } },
+      where: { id_user: userId  },
       attributes: [
         "id_link",
         [Sequelize.fn("COUNT", Sequelize.col("id_link")), "count"],
@@ -29,7 +15,7 @@ const seringDikunjungi = async (req, res) => {
       include: {
         model: Links,
         attributes: ["judul", "url", "gambar"],
-      },
+      }
       limit: 5,
     });
 

@@ -18,6 +18,7 @@ const listLink = async (req, res) => {
                     [Op.iLike]: `%${search}%`
                 }
             },
+            distinct: true, // Add this to fix the count issue
             limit,
             offset,
             order: [['createdAt', 'DESC']]
@@ -69,13 +70,15 @@ const listLink = async (req, res) => {
             deskripsi: link.deskripsi,
             gambar: link.gambar,
             visibilitas: link.visibilitas,
+            createdAt: link.createdAt,
+            updatedAt: link.updatedAt,
             ...(role === 'admin' && {
                 pembuat: {
                     nama: link.User.nama,
                     email: link.User.email
                 }
             }),
-            sharedWith: link.ShareLink ? link.ShareLink.map(share => ({
+            sharedWith: link.ShareLinks ? link.ShareLinks.map(share => ({
                 id: share.id,
                 user: {
                     nama: share.User.nama,
@@ -84,17 +87,23 @@ const listLink = async (req, res) => {
             })) : []
         });
 
-        const transformedResult = {
-            totalData: result.count,
-            totalPage: Math.ceil(result.count / limit),
-            currentPage: page,
-            data: result.rows.map(transformData)
-        };
+        // Calculate pagination information
+        const totalPages = Math.ceil(result.count / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
 
         return res.status(200).json({
             status: true,
-            message: "Data link berhasil didapatkan",
-            ...transformedResult
+            message: "Berhasil mendapatkan data link",
+            data: result.rows.map(transformData),
+            pagination: {
+                currentPage: page,
+                totalPages,
+                totalResults: result.count,
+                limit,
+                hasNextPage,
+                hasPrevPage
+            }
         });
 
     } catch (error) {

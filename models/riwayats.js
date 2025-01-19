@@ -15,9 +15,6 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
       });
-      Riwayat.hasMany(models.RiwayatLink, {
-        foreignKey: 'id_riwayat',
-      });
       
     }
   }

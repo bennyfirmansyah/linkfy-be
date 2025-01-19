@@ -5,8 +5,8 @@ const {
 module.exports = (sequelize, DataTypes) => {
   class RiwayatLink extends Model {
     static associate(models) {
-      RiwayatLink.belongsTo(models.Riwayat, {
-        foreignKey: 'id_riwayat',
+      RiwayatLink.belongsTo(models.Users, {
+        foreignKey: 'id_user',
         onDelete: 'CASCADE',
         onUpdate: 'CASCADE',
       });
@@ -24,11 +24,11 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       defaultValue: DataTypes.UUIDV4,
     },
-    id_riwayat: {
+    id_user: {
       type: DataTypes.UUID,
       allowNull: false,
       references: {
-        model: 'riwayats',
+        model: 'users',
         key: 'id',
       },
       onUpdate: 'CASCADE',

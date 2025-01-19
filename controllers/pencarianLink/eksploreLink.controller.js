@@ -1,5 +1,5 @@
-const { Users, Links, ShareLink } = require("../../models");
-const { Op, Sequelize } = require("sequelize");
+const { Links, ShareLink } = require("../../models");
+const { Op } = require("sequelize");
 
 const eksploreLink = async (req, res) => {
   const userId = req.user.id;
