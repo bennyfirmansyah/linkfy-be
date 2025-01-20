@@ -6,13 +6,13 @@ const textVectorizer = require('../../utils/textVectorizer.utils');
 
 const editLink = async (req, res) => {
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin'; // Assume role is included in user object
     const {linkId} = req.params;
     const { judul, url, deskripsi, visibilitas, sharedWith = [] } = req.body;
-    console.log(req.body);
-    console.log(linkId);
+    
     try {
         // Validasi input
-        if (!judul|| !url) {
+        if (!judul || !url) {
             return res.status(400).json({ 
                 success: false,
                 error: 'ID, Judul, dan URL harus diisi' 
@@ -21,10 +21,19 @@ const editLink = async (req, res) => {
 
         // Cari link yang akan diedit
         const link = await Links.findByPk(linkId);
-        if (!link || link.id_user !== userId) {
+        if (!link) {
             return res.status(404).json({ 
                 success: false,
-                message: 'Link tidak ditemukan atau Anda tidak memiliki akses' 
+                message: 'Link tidak ditemukan' 
+            });
+        }
+
+        // Cek akses pengeditan
+        // Admin dapat mengedit semua link, user hanya bisa edit link miliknya
+        if (!isAdmin && link.id_user !== userId) {
+            return res.status(403).json({ 
+                success: false,
+                message: 'Anda tidak memiliki akses untuk mengedit link ini' 
             });
         }
 
@@ -46,7 +55,7 @@ const editLink = async (req, res) => {
         let gambar = link.gambar;
         if (req.file) {
             const allowedMimeTypes = ['image/jpeg', 'image/png'];
-            const directory = `uploads/${userId}/`;
+            const directory = `uploads/${link.id_user}/`; // Use original owner's ID for directory
 
             if (!allowedMimeTypes.includes(req.file.mimetype)) {
                 return res.status(400).json({ 
