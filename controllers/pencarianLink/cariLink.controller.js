@@ -122,6 +122,12 @@ const cariLink = async (req, res) => {
           where: { id_user: userId },
           required: false,
           attributes: ["id"],
+          include: [
+            {
+              model: Users,
+              attributes: ["nama", "email"],
+            },
+          ],
         },
       ],
       distinct: true
@@ -151,6 +157,26 @@ const cariLink = async (req, res) => {
           recency: recencyScore
         };
 
+        // Safe access to User data
+        const pembuat = link.User ? {
+          nama: link.User.nama,
+          email: link.User.email
+        } : {
+          nama: 'Unknown',
+          email: 'Unknown'
+        };
+
+        // Safe access to ShareLinks data
+        const sharedWith = link.ShareLinks ? link.ShareLinks
+          .filter(share => share.User) // Only include shares with valid User data
+          .map(share => ({
+            id: share.id,
+            user: {
+              nama: share.User.nama,
+              email: share.User.email
+            }
+          })) : [];
+
         return {
           link: {
             id: link.id,
@@ -161,17 +187,8 @@ const cariLink = async (req, res) => {
             visibilitas: link.visibilitas,
             createdAt: link.createdAt,
             updatedAt: link.updatedAt,
-            pembuat: {
-              nama: link.User.nama,
-              email: link.User.email
-            },
-            sharedWith: link.ShareLinks ? link.ShareLinks.map(share => ({
-              id: share.id,
-              user: {
-                nama: share.User.nama,
-                email: share.User.email
-              }
-            })) : []
+            pembuat,
+            sharedWith
           },
           scores
         };
