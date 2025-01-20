@@ -9,57 +9,57 @@ const cariLink = async (req, res) => {
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = (page - 1) * limit;
   const { q: searchQuery } = req.query;
-  try {
 
+  try {
+    // Handle stopword-only queries early
     if (textVectorizer.isStopwordOnly(searchQuery)) {
-      return res.json({
+      return res.status(200).json({
         status: true,
         message: "Data link berhasil didapatkan",
-        totalData: 0,
-        totalPage: 1,
-        currentPage: page,
         data: [],
+        pagination: {
+          currentPage: page,
+          totalPages: 1,
+          totalResults: 0,
+          limit,
+          hasNextPage: false,
+          hasPrevPage: false
+        },
         metadata: {
           searchTerms: [],
-          queryVector: {},
-        },
+          queryVector: {}
+        }
       });
     }
 
     const queryVector = textVectorizer.generateVector(searchQuery, "");
 
-    // Simpan riwayat pencarian
+    // Save search history
     await Riwayat.create({
       id_user: userId,
       query: searchQuery,
     });
 
-    // Mendapatkan terms untuk pencarian
     const searchTerms = Object.keys(queryVector.vector);
-
-    // Membuat kondisi SQL untuk mencocokkan key dalam JSON menggunakan ILIKE
     const vectorKeyMatchCondition = searchTerms
-      .map(
-        (term) => `
-            EXISTS (
-                SELECT 1
-                FROM jsonb_object_keys(vector::jsonb) as keys
-                WHERE keys ILIKE '%${term}%'
-            )
-        `
-      )
+      .map(term => `
+        EXISTS (
+          SELECT 1
+          FROM jsonb_object_keys(vector::jsonb) as keys
+          WHERE keys ILIKE '%${term}%'
+        )
+      `)
       .join(" OR ");
 
-    // Dapatkan daftar link yang dibagikan ke user
+    // Get shared links
     const sharedLinks = await ShareLink.findAll({
       where: { id_user: userId },
       attributes: ["id_link"],
     });
+    const sharedLinkIds = sharedLinks.map(share => share.id_link);
 
-    const sharedLinkIds = sharedLinks.map((share) => share.id_link);
-
-    // Query utama dengan ILIKE matching dan kontrol visibilitas
-    const links = await Links.findAll({
+    // Main query configuration
+    const queryConfig = {
       where: {
         [Op.and]: [
           Sequelize.literal(`(${vectorKeyMatchCondition})`),
@@ -71,8 +71,8 @@ const cariLink = async (req, res) => {
                   { visibilitas: "private" },
                   {
                     [Op.or]: [
-                      { id: { [Op.in]: sharedLinkIds } }, // Link yang dibagikan ke user
-                      { id_user: userId }, // Link milik user sendiri
+                      { id: { [Op.in]: sharedLinkIds } },
+                      { id_user: userId },
                     ],
                   },
                 ],
@@ -82,43 +82,33 @@ const cariLink = async (req, res) => {
         ],
       },
       attributes: [
-        "id",
-        "judul",
-        "url",
-        "deskripsi",
-        "gambar",
-        "visibilitas",
-        "createdAt",
-        "updatedAt",
-        "vector",
-        "id_user",
+        "id", "judul", "url", "deskripsi", "gambar", "visibilitas", 
+        "createdAt", "updatedAt", "vector", "id_user",
         [
           Sequelize.literal(`(
-                        SELECT COUNT(*)::float / ${searchTerms.length}
-                        FROM jsonb_object_keys(vector::jsonb) as keys
-                        WHERE ${searchTerms
-                          .map((term) => `keys ILIKE '%${term}%'`)
-                          .join(" OR ")}
-                    )`),
+            SELECT COUNT(*)::float / ${searchTerms.length}
+            FROM jsonb_object_keys(vector::jsonb) as keys
+            WHERE ${searchTerms.map(term => `keys ILIKE '%${term}%'`).join(" OR ")}
+          )`),
           "relevance_score",
         ],
         [
           Sequelize.literal(`(
-                        SELECT COUNT(*)
-                        FROM riwayat_links rl
-                        INNER JOIN users r ON r.id = rl.id_user
-                        WHERE rl.id_link = "Links".id
-                        AND r.id = '${userId}'
-                    )`),
+            SELECT COUNT(*)
+            FROM riwayat_links rl
+            INNER JOIN users r ON r.id = rl.id_user
+            WHERE rl.id_link = "Links".id
+            AND r.id = '${userId}'
+          )`),
           "user_clicks",
         ],
         [
           Sequelize.literal(`(
-                        SELECT COUNT(*)
-                        FROM riwayat_links rl
-                        INNER JOIN users r ON r.id = rl.id_user
-                        WHERE rl.id_link = "Links".id
-                    )`),
+            SELECT COUNT(*)
+            FROM riwayat_links rl
+            INNER JOIN users r ON r.id = rl.id_user
+            WHERE rl.id_link = "Links".id
+          )`),
           "total_clicks",
         ],
       ],
@@ -134,101 +124,102 @@ const cariLink = async (req, res) => {
           attributes: ["id"],
         },
       ],
-      order: [
-        [Sequelize.literal("user_clicks"), "DESC"],
-        [Sequelize.literal("relevance_score"), "DESC"],
-        ["createdAt", "DESC"],
-      ],
-    });
+      distinct: true
+    };
 
-    // Proses hasil dan hitung similarity
-    const results = links
-      .map((link) => {
-        const linkVector = link.vector;
+    // Get all results for processing
+    const allLinks = await Links.findAll(queryConfig);
 
-        // Hitung kemiripan menggunakan textVectorizer
+    // Process and sort results
+    const processedResults = allLinks
+      .map(link => {
         const similarity = textVectorizer.calculateSimilarity(
           queryVector.vector,
-          linkVector
+          link.vector
         );
-
-        // Statistik klik untuk link ini
         const userClicks = parseFloat(link.getDataValue("user_clicks")) || 0;
         const totalClicks = parseFloat(link.getDataValue("total_clicks")) || 0;
+        const normalizedClickCount = totalClicks > 0 ? userClicks / totalClicks : 0;
+        const recencyScore = totalClicks > 0
+          ? Math.exp(-(Date.now() - new Date(link.updatedAt)) / (1000 * 60 * 60 * 24 * 7))
+          : 0;
 
-        // Normalisasi klik (0-1) dengan total maksimum klik
-        const normalizedClickCount =
-          totalClicks > 0 ? userClicks / totalClicks : 0;
-
-        // Hitung skor recency (0-1) berdasarkan waktu terbaru diklik
-        const recencyScore =
-          totalClicks > 0
-            ? Math.exp(
-                -(
-                  (Date.now() - new Date(link.updatedAt)) /
-                  (1000 * 60 * 60 * 24 * 7)
-                )
-              )
-            : 0;
+        const scores = {
+          similarity,
+          relevance: parseFloat(link.getDataValue("relevance_score")),
+          clickPopularity: normalizedClickCount,
+          recency: recencyScore
+        };
 
         return {
           link: {
-            ...link.toJSON(),
-            similarity,
-            relevance_score: parseFloat(link.getDataValue("relevance_score")),
-            normalizedClickCount,
-            recencyScore,
+            id: link.id,
+            judul: link.judul,
+            url: link.url,
+            deskripsi: link.deskripsi,
+            gambar: link.gambar,
+            visibilitas: link.visibilitas,
+            createdAt: link.createdAt,
+            updatedAt: link.updatedAt,
+            pembuat: {
+              nama: link.User.nama,
+              email: link.User.email
+            },
+            sharedWith: link.ShareLinks ? link.ShareLinks.map(share => ({
+              id: share.id,
+              user: {
+                nama: share.User.nama,
+                email: share.User.email
+              }
+            })) : []
           },
-          scores: {
-            similarity,
-            relevance: parseFloat(link.getDataValue("relevance_score")),
-            clickPopularity: normalizedClickCount,
-            recency: recencyScore,
-          },
+          scores
         };
       })
-      .filter(
-        (result) => result.scores.similarity > 0 || result.scores.relevance > 0
-      )
+      .filter(result => result.scores.similarity > 0 || result.scores.relevance > 0)
       .sort((a, b) => {
-        // Hitung skor gabungan berbobot
         const getScore = (item) => {
           return (
-            item.scores.similarity * 0.4 + // Relevansi pencarian
-            item.scores.relevance * 0.2 + // Kecocokan istilah
-            item.scores.clickPopularity * 0.2 + // Popularitas klik
+            item.scores.similarity * 0.4 +
+            item.scores.relevance * 0.2 +
+            item.scores.clickPopularity * 0.2 +
             item.scores.recency * 0.2
-          ); // Kebaruan
+          );
         };
-
         return getScore(b) - getScore(a);
       });
 
-    // Pagination dan hasil akhir
-    const totalData = results.length;
-    const totalPage = Math.ceil(totalData / limit);
-    const paginatedResults = results
-      .slice((page - 1) * limit, page * limit)
-      .map((result) => result.link);
+    // Apply pagination
+    const totalResults = processedResults.length;
+    const totalPages = Math.ceil(totalResults / limit);
+    const paginatedResults = processedResults
+      .slice(offset, offset + limit)
+      .map(result => result.link);
 
-    return res.json({
+    return res.status(200).json({
       status: true,
       message: "Data link berhasil didapatkan",
-      totalData,
-      totalPage,
-      currentPage: page,
       data: paginatedResults,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalResults,
+        limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
       metadata: {
         searchTerms,
-        queryVector: queryVector.vector,
-      },
+        queryVector: queryVector.vector
+      }
     });
+
   } catch (error) {
     console.error("Error in cariLink:", error);
     return res.status(500).json({
       status: false,
       message: "Terjadi kesalahan pada server",
-      error: error.message,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
