@@ -3,34 +3,31 @@ const { Op } = require("sequelize");
 
 const allUser = async (req, res) => {
     const userId = req.user.id;
+    const search = req.query.search || "";
     try {
         const user = await Users.findAll({
             where: {
                 id: {
                     [Op.ne]: userId, // Menggunakan operator 'not equal' untuk mengecualikan userId
                 },
+                nama: {
+                    [Op.iLike]: `%${search}%`, // Menggunakan operator 'iLike' untuk melakukan pencarian yang case-insensitive
+                },
             },
-            attributes: ["id", "nama", "email"]
+            attributes: { exclude: ["password", "role"] },
+            order: [["nama", "ASC"]],
         });
-
-        if (!user || user.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "User tidak ditemukan",
-            });
-        }
 
         return res.json({
-            success: true,
+            message: user.length > 0 ? "Berhasil mendapatkan data user" : "Data user tidak ditemukan",
             data: user,
         });
-        
     } catch (error) {
         return res.status(500).json({
             success: false,
             message: "Internal server error",
         });
     }
-}
+};
 
 module.exports = { allUser };

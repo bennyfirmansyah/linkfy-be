@@ -15,7 +15,7 @@ const seringDikunjungi = async (req, res) => {
       include: {
         model: Links,
         attributes: ["judul", "url", "gambar"],
-      }
+      },
       limit: 5,
     });
 

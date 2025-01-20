@@ -8,6 +8,7 @@ const tambahLink = async (req, res) => {
     const userId = req.user.id;
     const { judul, url, deskripsi, visibilitas, sharedWith = [] } = req.body;
     console.log(req.body);
+    console.log(req.file);
     try {
         // Validasi input
         if (!judul?.trim() || !url?.trim()) {

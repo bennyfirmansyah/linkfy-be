@@ -1,4 +1,4 @@
-const { Links, ShareLink } = require("../../models");
+const { Links, ShareLink, Users } = require("../../models");
 const { Op } = require("sequelize");
 
 const eksploreLink = async (req, res) => {
@@ -37,8 +37,12 @@ const eksploreLink = async (req, res) => {
           },
         ],
       },
-      attributes: ["id", "judul", "url", "gambar", "deskripsi", "visibilitas", "createdAt"],
-      order: [["createdAt", "DESC"]],
+      include: {
+        model: Users,
+        attributes: ["nama", "email"],
+      },
+      attributes: ["id", "judul", "url", "gambar", "deskripsi", "visibilitas", "updatedAt"],
+      order: [["updatedAt", "DESC"]],
       limit,
       offset,
     });
