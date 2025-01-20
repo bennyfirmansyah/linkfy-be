@@ -5,14 +5,14 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
 var bodyParser = require('body-parser');
-var dotenv = require  ('dotenv');
-
+var dotenv = require('dotenv');
 
 var authRouter = require('./routes/auth.router');
 var userRouter = require('./routes/user.router');
 
 var app = express();
-dotenv.config()
+
+dotenv.config();
 
 
 app.use(cors({

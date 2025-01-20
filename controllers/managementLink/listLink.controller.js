@@ -59,8 +59,8 @@ const listLink = async (req, res) => {
                 },
                 include: [shareLinkInclude]
             };
-
         const result = await Links.findAndCountAll(queryConfig);
+        
 
         // Transform function for consistent data transformation
         const transformData = (link) => ({

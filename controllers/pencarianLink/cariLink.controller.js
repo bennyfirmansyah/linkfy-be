@@ -9,6 +9,7 @@ const cariLink = async (req, res) => {
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = (page - 1) * limit;
   const { q: searchQuery } = req.query;
+  const role = req.user.role;
 
   try {
     // Handle stopword-only queries early
@@ -58,31 +59,34 @@ const cariLink = async (req, res) => {
     });
     const sharedLinkIds = sharedLinks.map(share => share.id_link);
 
+    const isAdmin = role === "admin";
     // Main query configuration
     const queryConfig = {
       where: {
         [Op.and]: [
           Sequelize.literal(`(${vectorKeyMatchCondition})`),
-          {
-            [Op.or]: [
-              { visibilitas: "public" },
-              {
-                [Op.and]: [
-                  { visibilitas: "private" },
+          isAdmin
+            ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
+            : {
+                [Op.or]: [
+                  { visibilitas: "public" },
                   {
-                    [Op.or]: [
-                      { id: { [Op.in]: sharedLinkIds } },
-                      { id_user: userId },
+                    [Op.and]: [
+                      { visibilitas: "private" },
+                      {
+                        [Op.or]: [
+                          { id: { [Op.in]: sharedLinkIds } },
+                          { id_user: userId },
+                        ],
+                      },
                     ],
                   },
                 ],
               },
-            ],
-          },
         ],
       },
       attributes: [
-        "id", "judul", "url", "deskripsi", "gambar", "visibilitas", 
+        "id", "judul", "url", "deskripsi", "gambar", "visibilitas",
         "createdAt", "updatedAt", "vector", "id_user",
         [
           Sequelize.literal(`(
@@ -119,7 +123,7 @@ const cariLink = async (req, res) => {
         },
         {
           model: ShareLink,
-          where: { id_user: userId },
+          where: isAdmin ? {} : { id_user: userId },
           required: false,
           attributes: ["id"],
           include: [
@@ -130,7 +134,7 @@ const cariLink = async (req, res) => {
           ],
         },
       ],
-      distinct: true
+      distinct: true,
     };
 
     // Get all results for processing
@@ -157,26 +161,6 @@ const cariLink = async (req, res) => {
           recency: recencyScore
         };
 
-        // Safe access to User data
-        const pembuat = link.User ? {
-          nama: link.User.nama,
-          email: link.User.email
-        } : {
-          nama: 'Unknown',
-          email: 'Unknown'
-        };
-
-        // Safe access to ShareLinks data
-        const sharedWith = link.ShareLinks ? link.ShareLinks
-          .filter(share => share.User) // Only include shares with valid User data
-          .map(share => ({
-            id: share.id,
-            user: {
-              nama: share.User.nama,
-              email: share.User.email
-            }
-          })) : [];
-
         return {
           link: {
             id: link.id,
@@ -187,8 +171,18 @@ const cariLink = async (req, res) => {
             visibilitas: link.visibilitas,
             createdAt: link.createdAt,
             updatedAt: link.updatedAt,
-            pembuat,
-            sharedWith
+            pembuat: {
+              nama: link.User.nama,
+              email: link.User.email
+            },
+            sharedWith: link.ShareLinks ? link.ShareLinks
+              .map(share => ({
+              id: share.id,
+              user: {
+                nama: share.User.nama,
+                email: share.User.email
+              }
+            })) : []
           },
           scores
         };
