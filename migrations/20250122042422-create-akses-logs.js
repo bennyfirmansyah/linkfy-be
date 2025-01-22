@@ -2,7 +2,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('share_links', {
+    await queryInterface.createTable('akses_logs', {
       id: {
         allowNull: false,
         primaryKey: true,
@@ -16,16 +16,10 @@ module.exports = {
           key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'SET NULL'
       },
-      id_link: {
+      session_id: {
         type: Sequelize.UUID,
-        references: {
-          model: 'links',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
       },
       createdAt: {
         allowNull: false,
@@ -38,11 +32,14 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
-    await queryInterface.addIndex('share_links', ['id_user']);
-    await queryInterface.addIndex('share_links', ['id_link']);
-    await queryInterface.addIndex('share_links', ['createdAt']);
+    await queryInterface.addIndex('akses_logs', ['id_user']);
+    await queryInterface.addIndex('akses_logs', ['session_id']);
+    await queryInterface.addIndex('akses_logs', ['createdAt']);
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('share_links');
+    await queryInterface.removeIndex('akses_logs', ['id_user']);
+    await queryInterface.removeIndex('akses_logs', ['session_id']);
+    await queryInterface.removeIndex('akses_logs', ['createdAt']);
+    await queryInterface.dropTable('akses_logs');
   }
 };

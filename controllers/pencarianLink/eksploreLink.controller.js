@@ -5,6 +5,7 @@ const eksploreLink = async (req, res) => {
   const userId = req.user.id;
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = Math.max(0, parseInt(req.query.offset) || 0); // Lazy column menggunakan offset
+  const role = req.user.role;
 
   try {
     // Mendapatkan link yang dibagikan ke user
@@ -15,26 +16,30 @@ const eksploreLink = async (req, res) => {
 
     const sharedLinkIds = sharedLinks.map((share) => share.id_link);
 
+    const isAdmin = role === "admin";
+
     // Query data link
     const links = await Links.findAll({
       where: {
         [Op.and]: [
-          {
-            [Op.or]: [
-              { visibilitas: "public" },
-              {
-                [Op.and]: [
-                  { visibilitas: "private" },
+          isAdmin
+            ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
+            : {
+                [Op.or]: [
+                  { visibilitas: "public" },
                   {
-                    [Op.or]: [
-                      { id: { [Op.in]: sharedLinkIds } }, // Link yang dibagikan ke user
-                      { id_user: userId }, // Link milik user sendiri
+                    [Op.and]: [
+                      { visibilitas: "private" },
+                      {
+                        [Op.or]: [
+                          { id: { [Op.in]: sharedLinkIds } },
+                          { id_user: userId },
+                        ],
+                      },
                     ],
                   },
                 ],
               },
-            ],
-          },
         ],
       },
       include: {
@@ -51,22 +56,24 @@ const eksploreLink = async (req, res) => {
     const totalLinks = await Links.count({
       where: {
         [Op.and]: [
-          {
-            [Op.or]: [
-              { visibilitas: "public" },
-              {
-                [Op.and]: [
-                  { visibilitas: "private" },
+          isAdmin
+            ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
+            : {
+                [Op.or]: [
+                  { visibilitas: "public" },
                   {
-                    [Op.or]: [
-                      { id: { [Op.in]: sharedLinkIds } }, // Link yang dibagikan ke user
-                      { id_user: userId }, // Link milik user sendiri
+                    [Op.and]: [
+                      { visibilitas: "private" },
+                      {
+                        [Op.or]: [
+                          { id: { [Op.in]: sharedLinkIds } },
+                          { id_user: userId },
+                        ],
+                      },
                     ],
                   },
                 ],
               },
-            ],
-          },
         ],
       },
     });

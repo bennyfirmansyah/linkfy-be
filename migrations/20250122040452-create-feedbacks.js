@@ -2,12 +2,12 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('share_links', {
+    await queryInterface.createTable('feedbacks', {
       id: {
         allowNull: false,
+        autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4
+        type: Sequelize.INTEGER
       },
       id_user: {
         type: Sequelize.UUID,
@@ -16,16 +16,11 @@ module.exports = {
           key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'SET NULL'
       },
-      id_link: {
-        type: Sequelize.UUID,
-        references: {
-          model: 'links',
-          key: 'id'
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+      feedback: {
+        type: Sequelize.TEXT,
+        allowNull: false
       },
       createdAt: {
         allowNull: false,
@@ -38,11 +33,11 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
-    await queryInterface.addIndex('share_links', ['id_user']);
-    await queryInterface.addIndex('share_links', ['id_link']);
-    await queryInterface.addIndex('share_links', ['createdAt']);
+    await queryInterface.addIndex('feedbacks', ['id_user']);
+    await queryInterface.addIndex('feedbacks', ['createdAt']);
+    await queryInterface.addIndex('feedbacks', ['feedback']);
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('share_links');
+    await queryInterface.dropTable('feedbacks');
   }
 };

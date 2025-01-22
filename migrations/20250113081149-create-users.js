@@ -22,10 +22,22 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
-      role: {
-        type: Sequelize.ENUM('admin', 'user'),
-        defaultValue: 'user',
+      googleId: {
+        type: Sequelize.STRING,
+        unique: true
+      },
+      authProvider: {
+        type: Sequelize.ENUM('local', 'google'),
+        defaultValue: 'local',
         allowNull: false
+      },
+      role: {
+        type: Sequelize.ENUM('admin', 'user', 'umum'),
+        defaultValue: 'umum',
+        allowNull: false
+      },
+      unit: {
+        type: Sequelize.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum')
       },
       createdAt: {
         allowNull: false,

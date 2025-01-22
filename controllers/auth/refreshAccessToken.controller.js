@@ -21,6 +21,7 @@ const refreshAccessToken = async (req, res) => {
             email: user.email,
             nama: user.nama,
             role: user.role, 
+            unit: user.unit
           },
           JWT_SECRET,
           { expiresIn: "1d" } // Access token berlaku 1 jam

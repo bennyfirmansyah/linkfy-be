@@ -57,6 +57,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('public', 'private'),
       defaultValue: 'public',
     },
+    kategori: {
+      type: DataTypes.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum'),
+      allowNull: false,
+    },
     vector: {
       type: DataTypes.JSONB,
     },

@@ -10,7 +10,7 @@ const listUser = async (req, res) => {
     try {
         const { count, rows: users } = await Users.findAndCountAll({
             where: {
-                role : 'user',
+                role : ['user', 'umum'],
                 [Op.or]: [
                     {
                         nama: {
@@ -24,7 +24,7 @@ const listUser = async (req, res) => {
                     }
                 ]
             },
-            attributes: { exclude: ['password', 'role'] },
+            attributes: ['id', 'email', 'nama', 'role', 'unit', 'createdAt'],
             limit: limit,
             offset: offset,
             order: [['createdAt', 'DESC']] 

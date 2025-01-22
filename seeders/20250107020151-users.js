@@ -12,15 +12,21 @@ module.exports = {
         email: 'admin@gmail.com',
         password: await bcrypt.hash('123', 10),
         role: 'admin',
+        googleId: null,
+        authProvider: 'local',
+        unit: 'IPDS',
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         id: uuidv4(),
         nama: 'Muhammad Daffa',
-        email: 'user1@gmail.com',
+        email: 'mfarizbtsa@gmail.com',
         password: await bcrypt.hash('123', 10),
         role: 'user',
+        googleId: null,
+        authProvider: 'local',
+        unit: 'Umum',
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -30,6 +36,9 @@ module.exports = {
         email: 'user2@gmail.com',
         password: await bcrypt.hash('123', 10),
         role: 'user',
+        googleId: null,
+        authProvider: 'local',
+        unit: 'Sosial',
         createdAt: new Date(),
         updatedAt: new Date()
       }
