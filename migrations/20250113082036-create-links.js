@@ -17,7 +17,7 @@ module.exports = {
           key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+        onDelete: 'CASCADE'
       },
       judul: {
         type: Sequelize.STRING,
@@ -37,6 +37,10 @@ module.exports = {
       visibilitas: {
         type: Sequelize.ENUM('public', 'private'),
         defaultValue: 'public',
+      },
+      kategori: {
+        type: Sequelize.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum'),
+        allowNull: false
       },
       vector: {
         type: Sequelize.JSONB,
@@ -64,6 +68,7 @@ module.exports = {
     );
     await queryInterface.addIndex('links', ['vector_metadata']);
     await queryInterface.addIndex('links', ['visibilitas']);
+    await queryInterface.addIndex('links', ['kategori']);
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('links');

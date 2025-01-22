@@ -9,7 +9,7 @@ const cariLink = async (req, res) => {
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = (page - 1) * limit;
   const { q: searchQuery } = req.query;
-  const role = req.user.role;
+  const userRole = req.user?.role || "user";
 
   try {
     // Handle stopword-only queries early
@@ -58,14 +58,12 @@ const cariLink = async (req, res) => {
       attributes: ["id_link"],
     });
     const sharedLinkIds = sharedLinks.map(share => share.id_link);
-
-    const isAdmin = role === "admin";
     // Main query configuration
     const queryConfig = {
       where: {
         [Op.and]: [
           Sequelize.literal(`(${vectorKeyMatchCondition})`),
-          isAdmin
+          userRole === "admin"
             ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
             : {
                 [Op.or]: [
@@ -123,7 +121,7 @@ const cariLink = async (req, res) => {
         },
         {
           model: ShareLink,
-          where: isAdmin ? {} : { id_user: userId },
+          where: { id_user: userId },
           required: false,
           attributes: ["id"],
           include: [
@@ -171,11 +169,15 @@ const cariLink = async (req, res) => {
             visibilitas: link.visibilitas,
             createdAt: link.createdAt,
             updatedAt: link.updatedAt,
-            pembuat: {
+            pembuat: link.User ? {
               nama: link.User.nama,
               email: link.User.email
+            }:{
+              nama: "Tidak diketahui",
+              email: "Tidak diketahui"
             },
             sharedWith: link.ShareLinks ? link.ShareLinks
+              .filter(share => share.User)
               .map(share => ({
               id: share.id,
               user: {

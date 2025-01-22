@@ -1,16 +1,19 @@
 var express = require('express');
 var router = express.Router();
 var { auth } = require('../middlewares/auth.middleware');
-var { upload } = require('../middlewares/multer.middleware');
+var { upload, uploadExcel } = require('../middlewares/multer.middleware');
 
 //Modul management user
-var { tambahUser } = require('../controllers/managementUser/tambahUser.controller');
+var { tambahUser, tambahUserBulk } = require('../controllers/managementUser/tambahUser.controller');
 var { hapusUser } = require('../controllers/managementUser/hapusUser.controller');
 var { listUser } = require('../controllers/managementUser/listUser.controller');
+var { editUser } = require('../controllers/managementUser/editUser.controller');
 
 router.get('/list-user', auth(['admin']), listUser);
 router.post('/add-user', auth(['admin']), tambahUser);
+router.post('/add-user-bulk', auth(['admin']), uploadExcel.single('file'),tambahUserBulk);
 router.delete('/delete-user/:userId', auth(['admin']), hapusUser);
+router.put('/edit-user/:userId', auth(['admin']), editUser);
 
 //modul management link
 var { listLink } = require('../controllers/managementLink/listLink.controller');
