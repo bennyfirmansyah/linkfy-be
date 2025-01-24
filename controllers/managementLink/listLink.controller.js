@@ -8,16 +8,21 @@ const listLink = async (req, res) => {
     const limit = Math.max(1, parseInt(req.query.limit) || 10);
     const offset = (page - 1) * limit;
     const search = req.query.search || '';
+    const kategori = req.query.kategori || "";
 
     try {
+        const whereClause = {
+            judul: {
+                [Op.iLike]: `%${search}%`
+            }
+        };
+        if(kategori) {
+            whereClause.kategori = kategori;
+        }
         // Base query configuration
         const baseQueryConfig = {
-            attributes: ['id', 'judul', 'url', 'deskripsi', 'gambar', 'visibilitas', 'createdAt'],
-            where: {
-                judul: {
-                    [Op.iLike]: `%${search}%`
-                }
-            },
+            attributes: ['id', 'judul', 'url', 'deskripsi', 'gambar', 'visibilitas', 'createdAt' ,'updatedAt', 'kategori'],
+            where: whereClause,
             distinct: true, // Add this to fix the count issue
             limit,
             offset,
@@ -70,6 +75,7 @@ const listLink = async (req, res) => {
             deskripsi: link.deskripsi,
             gambar: link.gambar,
             visibilitas: link.visibilitas,
+            kategori: link.kategori,
             createdAt: link.createdAt,
             updatedAt: link.updatedAt,
             ...(role === 'admin' && {

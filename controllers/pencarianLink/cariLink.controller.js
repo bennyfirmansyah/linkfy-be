@@ -1,18 +1,17 @@
 const { Users, Links, ShareLink, Riwayat } = require("../../models");
 const { Sequelize, Op } = require("sequelize");
 const textVectorizer = require("../../utils/textVectorizer.utils");
+const { handleSearchHistory } = require("../../utils/cookieHandler.utils");
 require("dotenv").config();
 
 const cariLink = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  const userRole = req.user?.role || "umum";
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = (page - 1) * limit;
   const { q: searchQuery } = req.query;
-  const userRole = req.user?.role || "user";
-
   try {
-    // Handle stopword-only queries early
     if (textVectorizer.isStopwordOnly(searchQuery)) {
       return res.status(200).json({
         status: true,
@@ -34,53 +33,62 @@ const cariLink = async (req, res) => {
     }
 
     const queryVector = textVectorizer.generateVector(searchQuery, "");
-
-    // Save search history
-    await Riwayat.create({
-      id_user: userId,
-      query: searchQuery,
-    });
+    
+    // Save search history only for logged-in users
+    if (userId) {
+      await Riwayat.create({ id_user: userId, query: searchQuery });
+    } else {
+      const searchHistory = handleSearchHistory(req, res);
+      searchHistory.add(searchQuery);
+    }
 
     const searchTerms = Object.keys(queryVector.vector);
     const vectorKeyMatchCondition = searchTerms
       .map(term => `
         EXISTS (
-          SELECT 1
+          SELECT 1 
           FROM jsonb_object_keys(vector::jsonb) as keys
           WHERE keys ILIKE '%${term}%'
         )
       `)
       .join(" OR ");
 
-    // Get shared links
-    const sharedLinks = await ShareLink.findAll({
-      where: { id_user: userId },
-      attributes: ["id_link"],
-    });
-    const sharedLinkIds = sharedLinks.map(share => share.id_link);
-    // Main query configuration
+    let visibilityCondition;
+    if (userRole === "admin") {
+      visibilityCondition = {};
+    } else if (userRole === "user") {
+      const sharedLinks = await ShareLink.findAll({
+        where: { id_user: userId },
+        attributes: ["id_link"],
+      });
+      const sharedLinkIds = sharedLinks.map(share => share.id_link);
+      
+      visibilityCondition = {
+        [Op.or]: [
+          { visibilitas: "public" },
+          {
+            [Op.and]: [
+              { visibilitas: "private" },
+              {
+                [Op.or]: [
+                  { id: { [Op.in]: sharedLinkIds } },
+                  { id_user: userId },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+    } else {
+      // For public and non-logged in users
+      visibilityCondition = { visibilitas: "public" };
+    }
+
     const queryConfig = {
       where: {
         [Op.and]: [
           Sequelize.literal(`(${vectorKeyMatchCondition})`),
-          userRole === "admin"
-            ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
-            : {
-                [Op.or]: [
-                  { visibilitas: "public" },
-                  {
-                    [Op.and]: [
-                      { visibilitas: "private" },
-                      {
-                        [Op.or]: [
-                          { id: { [Op.in]: sharedLinkIds } },
-                          { id_user: userId },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
+          visibilityCondition
         ],
       },
       attributes: [
@@ -94,32 +102,35 @@ const cariLink = async (req, res) => {
           )`),
           "relevance_score",
         ],
-        [
-          Sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM riwayat_links rl
-            INNER JOIN users r ON r.id = rl.id_user
-            WHERE rl.id_link = "Links".id
-            AND r.id = '${userId}'
-          )`),
-          "user_clicks",
-        ],
-        [
-          Sequelize.literal(`(
-            SELECT COUNT(*)
-            FROM riwayat_links rl
-            INNER JOIN users r ON r.id = rl.id_user
-            WHERE rl.id_link = "Links".id
-          )`),
-          "total_clicks",
-        ],
+        // Only include click metrics for logged-in users
+        ...(userId ? [
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM riwayat_links rl
+              INNER JOIN users r ON r.id = rl.id_user
+              WHERE rl.id_link = "Links".id
+              AND r.id = '${userId}'
+            )`),
+            "user_clicks",
+          ],
+          [
+            Sequelize.literal(`(
+              SELECT COUNT(*)
+              FROM riwayat_links rl
+              INNER JOIN users r ON r.id = rl.id_user
+              WHERE rl.id_link = "Links".id
+            )`),
+            "total_clicks",
+          ],
+        ] : []),
       ],
       include: [
         {
           model: Users,
           attributes: ["nama", "email"],
         },
-        {
+        ...(userRole === "user" ? [{
           model: ShareLink,
           where: { id_user: userId },
           required: false,
@@ -130,7 +141,7 @@ const cariLink = async (req, res) => {
               attributes: ["nama", "email"],
             },
           ],
-        },
+        }] : []),
       ],
       distinct: true,
     };

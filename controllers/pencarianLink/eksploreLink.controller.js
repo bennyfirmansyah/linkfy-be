@@ -2,46 +2,45 @@ const { Links, ShareLink, Users } = require("../../models");
 const { Op } = require("sequelize");
 
 const eksploreLink = async (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  const userRole = req.user?.role || "public";
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
-  const offset = Math.max(0, parseInt(req.query.offset) || 0); // Lazy column menggunakan offset
-  const role = req.user.role;
+  const offset = Math.max(0, parseInt(req.query.offset) || 0);
 
   try {
-    // Mendapatkan link yang dibagikan ke user
-    const sharedLinks = await ShareLink.findAll({
-      where: { id_user: userId },
-      attributes: ["id_link"],
-    });
-
-    const sharedLinkIds = sharedLinks.map((share) => share.id_link);
-
-    const isAdmin = role === "admin";
-
-    // Query data link
-    const links = await Links.findAll({
-      where: {
-        [Op.and]: [
-          isAdmin
-            ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
-            : {
+    let whereCondition;
+    if (userRole === "admin") {
+      whereCondition = {};
+    } else if (userRole === "user") {
+      const sharedLinks = await ShareLink.findAll({
+        where: { id_user: userId },
+        attributes: ["id_link"],
+      });
+      const sharedLinkIds = sharedLinks.map((share) => share.id_link);
+      
+      whereCondition = {
+        [Op.or]: [
+          { visibilitas: "public" },
+          {
+            [Op.and]: [
+              { visibilitas: "private" },
+              {
                 [Op.or]: [
-                  { visibilitas: "public" },
-                  {
-                    [Op.and]: [
-                      { visibilitas: "private" },
-                      {
-                        [Op.or]: [
-                          { id: { [Op.in]: sharedLinkIds } },
-                          { id_user: userId },
-                        ],
-                      },
-                    ],
-                  },
+                  { id: { [Op.in]: sharedLinkIds } },
+                  { id_user: userId },
                 ],
               },
+            ],
+          },
         ],
-      },
+      };
+    } else {
+      // For public and non-logged in users
+      whereCondition = { visibilitas: "public" };
+    }
+
+    const links = await Links.findAll({
+      where: whereCondition,
       include: {
         model: Users,
         attributes: ["nama", "email"],
@@ -52,39 +51,16 @@ const eksploreLink = async (req, res) => {
       offset,
     });
 
-    // Hitung total data untuk menentukan apakah ada lebih banyak data
     const totalLinks = await Links.count({
-      where: {
-        [Op.and]: [
-          isAdmin
-            ? {} // Jika admin, tidak ada filter tambahan pada visibilitas dan sharedLinkIds
-            : {
-                [Op.or]: [
-                  { visibilitas: "public" },
-                  {
-                    [Op.and]: [
-                      { visibilitas: "private" },
-                      {
-                        [Op.or]: [
-                          { id: { [Op.in]: sharedLinkIds } },
-                          { id_user: userId },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-        ],
-      },
+      where: whereCondition,
     });
 
-    // Tentukan apakah masih ada data yang belum dimuat
     const hasMore = offset + links.length < totalLinks;
 
     return res.json({
       status: true,
       data: links,
-      hasMore, // Indikator untuk lazy column
+      hasMore,
     });
   } catch (error) {
     console.error("Error in exploreLink:", error);

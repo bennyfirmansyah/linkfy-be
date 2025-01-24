@@ -1,20 +1,36 @@
 const { Users } = require("../../models");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 
 const allUser = async (req, res) => {
     const userId = req.user.id;
     const search = req.query.search || "";
+    const unit = req.query.unit || "";
     try {
+        const whereClause = {
+            id: {
+                [Op.ne]: userId,
+            },
+            nama: {
+                [Op.iLike]: `%${search}%`,
+            },
+        };
+
+        if (unit) {
+            whereClause.unit = unit;
+        }
+
         const user = await Users.findAll({
             where: {
-                id: {
-                    [Op.ne]: userId, // Menggunakan operator 'not equal' untuk mengecualikan userId
-                },
-                nama: {
-                    [Op.iLike]: `%${search}%`, // Menggunakan operator 'iLike' untuk melakukan pencarian yang case-insensitive
-                },
+                ...whereClause,
+                role: {
+                    [Op.in]: ["admin", "user"]
+                }
             },
-            attributes: { exclude: ["password", "role"] },
+            attributes: { 
+                exclude: [
+                    "password"
+                ] 
+            },
             order: [["nama", "ASC"]],
         });
 
