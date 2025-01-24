@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var { auth } = require('../middlewares/auth.middleware');
+var { auth, optionalAuth } = require('../middlewares/auth.middleware');
 var { upload, uploadExcel } = require('../middlewares/multer.middleware');
 
 //Modul management user
@@ -34,18 +34,17 @@ var { klikLink } = require('../controllers/pencarianLink/klikLink.controller');
 var { eksploreLink } = require('../controllers/pencarianLink/eksploreLink.controller');
 var { riwayatKueri } = require('../controllers/pencarianLink/riwayatKueri.controller');
 
-router.get('/search-link', auth(['admin', 'user']), cariLink);
-router.post('/click-link', auth(['admin', 'user']), klikLink);
-router.get('/explore-link', auth(['admin', 'user']), eksploreLink);
-router.get('/query-history', auth(['admin', 'user']), riwayatKueri);
+router.get('/search-link', optionalAuth, cariLink);
+router.post('/click-link', optionalAuth, klikLink); 
+router.get('/explore-link', optionalAuth, eksploreLink);
+router.get('/query-history', optionalAuth, riwayatKueri);
 
 //modul riwayat link
 var { terakhirDikunjungi } = require('../controllers/riwayatLink/terakhirDikunjungi.controller');
 var { seringDikunjungi } = require('../controllers/riwayatLink/seringDikunjungi.controller');
 
-router.get('/last-visited', auth(['admin', 'user']), terakhirDikunjungi);
-router.get('/most-visited', auth(['admin', 'user']), seringDikunjungi);
-
+router.get('/last-visited', optionalAuth, terakhirDikunjungi);
+router.get('/most-visited', optionalAuth, seringDikunjungi);
 
 
 module.exports = router;

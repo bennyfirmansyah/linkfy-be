@@ -8,14 +8,14 @@ const editLink = async (req, res) => {
     const userId = req.user.id;
     const isAdmin = req.user.role === 'admin'; // Assume role is included in user object
     const {linkId} = req.params;
-    const { judul, url, deskripsi, visibilitas, sharedWith = [] } = req.body;
+    const { judul, url, deskripsi, visibilitas, kategori, sharedWith = [] } = req.body;
     
     try {
         // Validasi input
-        if (!judul || !url) {
+        if (!judul?.trim() || !url?.trim() || !kategori.trim()) {
             return res.status(400).json({ 
                 success: false,
-                error: 'ID, Judul, dan URL harus diisi' 
+                error: 'Judul, URL, dan Kategori harus diisi' 
             });
         }
 
@@ -89,6 +89,7 @@ const editLink = async (req, res) => {
                 deskripsi,
                 gambar,
                 visibilitas,
+                kategori,
                 vector: vectorData.vector,
                 vector_metadata: vectorData.metadata
             }, { transaction: t });

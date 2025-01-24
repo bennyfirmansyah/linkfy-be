@@ -6,23 +6,32 @@ const listUser = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const search = req.query.search || '';
+    const unit = req.query.unit || "";
 
     try {
+        const whereCluse = {
+            [Op.or]: [
+                {
+                    nama: {
+                        [Op.iLike]: `%${search}%`
+                    }
+                },
+                {
+                    email: {
+                        [Op.iLike]: `%${search}%`
+                    }
+                }
+            ]
+        };
+
+        if (unit) {
+            whereCluse.unit = unit;
+        }
+
         const { count, rows: users } = await Users.findAndCountAll({
             where: {
                 role : ['user', 'umum'],
-                [Op.or]: [
-                    {
-                        nama: {
-                            [Op.iLike]: `%${search}%`
-                        }
-                    },
-                    {
-                        email: {
-                            [Op.iLike]: `%${search}%`
-                        }
-                    }
-                ]
+                ...whereCluse
             },
             attributes: ['id', 'email', 'nama', 'role', 'unit', 'createdAt'],
             limit: limit,

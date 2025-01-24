@@ -6,15 +6,13 @@ const textVectorizer = require('../../utils/textVectorizer.utils');
 
 const tambahLink = async (req, res) => {
     const userId = req.user.id;
-    const { judul, url, deskripsi, visibilitas, sharedWith = [] } = req.body;
-    console.log(req.body);
-    console.log(req.file);
+    const { judul, url, deskripsi, visibilitas, kategori, sharedWith = [] } = req.body;
     try {
         // Validasi input
-        if (!judul?.trim() || !url?.trim()) {
+        if (!judul?.trim() || !url?.trim() || !kategori.trim()) {
             return res.status(400).json({ 
                 success: false,
-                error: 'Judul dan URL harus diisi' 
+                error: 'Judul, URL, dan Kategori harus diisi' 
             });
         }
 
@@ -67,6 +65,7 @@ const tambahLink = async (req, res) => {
                 deskripsi,
                 gambar,
                 visibilitas,
+                kategori,
                 vector: vectorData.vector,
                 vector_metadata: vectorData.metadata
             }, { transaction: t });

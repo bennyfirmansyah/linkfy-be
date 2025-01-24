@@ -3,7 +3,7 @@ const { Users } = require('../../models');
 const XLSX = require('xlsx')
 
 const generateRandomPassword = () => {
-    return Math.random().toString(36).slice(-8); // Generate 8 karakter random
+    return Math.random().toString(36).slice(-12);
 };
 
 // Validasi email
