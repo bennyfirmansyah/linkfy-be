@@ -92,7 +92,7 @@ const cariLink = async (req, res) => {
         ],
       },
       attributes: [
-        "id", "judul", "url", "deskripsi", "gambar", "visibilitas",
+        "id", "judul", "url", "deskripsi", "gambar", "visibilitas", "kategori",
         "createdAt", "updatedAt", "vector", "id_user",
         [
           Sequelize.literal(`(
@@ -180,6 +180,7 @@ const cariLink = async (req, res) => {
             visibilitas: link.visibilitas,
             createdAt: link.createdAt,
             updatedAt: link.updatedAt,
+            kategori: link.kategori,
             pembuat: link.User ? {
               nama: link.User.nama,
               email: link.User.email

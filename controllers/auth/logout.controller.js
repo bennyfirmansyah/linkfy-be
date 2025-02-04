@@ -1,11 +1,16 @@
 const logout = async (req, res) => {
     try {
-        // Hapus refresh token dari cookie
-        res.clearCookie('refreshToken', {
+        // Hapus multiple cookies
+        const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "Strict"
-        });
+        };
+
+        res.clearCookie('refreshToken', cookieOptions);
+        res.clearCookie('searchHistory', cookieOptions);
+        res.clearCookie('clickHistory', cookieOptions);
+
         res.status(200).json({
             message: "Logout successful"
         });
@@ -18,4 +23,6 @@ const logout = async (req, res) => {
     }
 };
 
-module.exports = {logout};
+module.exports = {
+    logout
+};

@@ -18,8 +18,13 @@ module.exports = {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL'
       },
-      session_id: {
-        type: Sequelize.UUID,
+      ip_address: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      user_agent: {
+        type: Sequelize.TEXT,
+        allowNull: false
       },
       createdAt: {
         allowNull: false,
@@ -33,13 +38,16 @@ module.exports = {
       }
     });
     await queryInterface.addIndex('akses_logs', ['id_user']);
-    await queryInterface.addIndex('akses_logs', ['session_id']);
     await queryInterface.addIndex('akses_logs', ['createdAt']);
+    await queryInterface.addIndex('akses_logs', ['id_user', 'ip_address', 'createdAt'], {
+      name: 'akses_logs_daily_unique',
+      unique: true
+    });
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.removeIndex('akses_logs', ['id_user']);
-    await queryInterface.removeIndex('akses_logs', ['session_id']);
     await queryInterface.removeIndex('akses_logs', ['createdAt']);
+    await queryInterface.removeIndex('akses_logs', 'akses_logs_daily_unique');
     await queryInterface.dropTable('akses_logs');
   }
 };

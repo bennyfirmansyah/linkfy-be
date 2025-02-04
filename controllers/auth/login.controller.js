@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { google } = require('googleapis');
+const { google } = require("googleapis");
 const { Users } = require("../../models");
 require("dotenv").config();
 
@@ -19,13 +19,13 @@ const oauth2Client = new google.auth.OAuth2(
 // Fungsi untuk generate URL login Google
 const getGoogleAuthURL = () => {
     const scopes = [
-        'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/userinfo.email',
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.email",
     ];
 
     return oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        prompt: 'consent',
+        access_type: "offline",
+        prompt: "consent",
         scope: scopes,
     });
 };
@@ -36,20 +36,22 @@ const generateTokens = (user) => {
         email: user.email,
         nama: user.nama,
         role: user.role,
-        unit: user.unit
+        unit: user.unit,
     };
 
     const accessToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "1d" });
-    const refreshToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "7d" });
+    const refreshToken = jwt.sign(tokenPayload, JWT_SECRET, {
+        expiresIn: "7d",
+    });
 
     return { accessToken, refreshToken };
 };
 
 const setCookieOptions = (isProduction) => ({
     httpOnly: true,
-    secure: isProduction === 'production',
+    secure: isProduction === "production",
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    sameSite: isProduction === 'production' ? "Strict" : "Lax",
+    sameSite: isProduction === "production" ? "Strict" : "Lax",
 });
 
 // Login dengan email dan password
@@ -69,16 +71,29 @@ const login = async (req, res) => {
 
         const { accessToken, refreshToken } = generateTokens(user);
 
-        res.cookie("refreshToken", refreshToken, setCookieOptions(process.env.NODE_ENV));
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict"
+        };
+        
+        res.clearCookie('searchHistory', cookieOptions);
+        res.clearCookie('clickHistory', cookieOptions);
+
+        res.cookie(
+            "refreshToken",
+            refreshToken,
+            setCookieOptions(process.env.NODE_ENV)
+        );
         res.json({
             message: "Login berhasil",
-            accessToken
+            accessToken,
         });
     } catch (error) {
         console.error("Login Error:", error);
         res.status(500).json({
             error: "Gagal login",
-            details: error.message
+            details: error.message,
         });
     }
 };
@@ -92,7 +107,7 @@ const getGoogleURL = (req, res) => {
 const googleCallback = async (req, res) => {
     try {
         const { code } = req.query;
-        
+
         // Dapatkan tokens dari code
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
@@ -100,7 +115,7 @@ const googleCallback = async (req, res) => {
         // Gunakan tokens untuk mendapatkan informasi user
         const oauth2 = google.oauth2({
             auth: oauth2Client,
-            version: 'v2'
+            version: "v2",
         });
 
         const { data } = await oauth2.userinfo.get();
@@ -113,7 +128,7 @@ const googleCallback = async (req, res) => {
             if (!user.googleId) {
                 await user.update({
                     googleId: data.id,
-                    authProvider: 'google'
+                    authProvider: "google",
                 });
             }
         } else {
@@ -122,21 +137,35 @@ const googleCallback = async (req, res) => {
                 email: data.email,
                 nama: data.name,
                 googleId: data.id,
-                authProvider: 'google',
-                role: 'umum',
+                authProvider: "google",
+                role: "umum",
                 password: await bcrypt.hash(Math.random().toString(36), 10),
             });
         }
 
         const { accessToken, refreshToken } = generateTokens(user);
 
-        res.cookie("refreshToken", refreshToken, setCookieOptions(process.env.NODE_ENV));
-        
-        // Redirect ke frontend dengan access token
-        res.redirect(`${process.env.CORS_ORIGIN}/auth/success?token=${accessToken}`);
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "Strict"
+        };
+
+        res.clearCookie('searchHistory', cookieOptions);
+        res.clearCookie('clickHistory', cookieOptions);
+
+        res.cookie(
+            "refreshToken",
+            refreshToken,
+            setCookieOptions(process.env.NODE_ENV)
+        );
+
+        res.redirect(
+            `${process.env.CORS_ORIGIN}/auth/google/success?token=${accessToken}`
+        );
     } catch (error) {
         console.error("Google Auth Error:", error);
-        res.redirect(`${process.env.CORS_ORIGIN}/auth/error`);
+        res.redirect(`${process.env.CORS_ORIGIN}/login`);
     }
 };
 

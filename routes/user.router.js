@@ -32,12 +32,13 @@ router.get('/all-user', auth(['admin', 'user']), allUser);
 var { cariLink } = require('../controllers/pencarianLink/cariLink.controller');
 var { klikLink } = require('../controllers/pencarianLink/klikLink.controller');
 var { eksploreLink } = require('../controllers/pencarianLink/eksploreLink.controller');
-var { riwayatKueri } = require('../controllers/pencarianLink/riwayatKueri.controller');
+var { riwayatKueri, hapusRiwayatKueri } = require('../controllers/pencarianLink/riwayatKueri.controller');
 
 router.get('/search-link', optionalAuth, cariLink);
 router.post('/click-link', optionalAuth, klikLink); 
 router.get('/explore-link', optionalAuth, eksploreLink);
 router.get('/query-history', optionalAuth, riwayatKueri);
+router.delete('/delete-query-history', optionalAuth, hapusRiwayatKueri);
 
 //modul riwayat link
 var { terakhirDikunjungi } = require('../controllers/riwayatLink/terakhirDikunjungi.controller');
@@ -45,6 +46,22 @@ var { seringDikunjungi } = require('../controllers/riwayatLink/seringDikunjungi.
 
 router.get('/last-visited', optionalAuth, terakhirDikunjungi);
 router.get('/most-visited', optionalAuth, seringDikunjungi);
+
+//modul feedback
+var { tambahFeedback } = require('../controllers/feedback/tambahFeedback.controller');
+
+router.post('/add-feedback', optionalAuth, tambahFeedback);
+
+//modul dashboard
+var { countLink } = require('../controllers/dashboard/countLink.controller');
+var { countUserLogin } = require('../controllers/dashboard/countUserLogin.controller');
+var { getTodayStats, getHourlyStats, getRealTimeSummary } = require('../controllers/dashboard/countAccessLogs.controller');
+
+router.get('/count-link', auth(['admin']), countLink);
+router.get('/count-user-login', auth(['admin']), countUserLogin);
+router.get('/hourly', auth(['admin']), getHourlyStats);
+router.get('/daily', auth(['admin']), getTodayStats);
+router.get('/summary', auth(['admin']), getRealTimeSummary);
 
 
 module.exports = router;
