@@ -101,6 +101,14 @@ const tambahUserBulk = async (req, res) => {
                     throw new Error(`Email ${row.email} harus menggunakan domain @gmail.com`);
                 }
 
+                if (!['admin', 'user', 'umum'].includes(row.role)) {
+                    throw new Error(`Role ${row.role} tidak valid untuk user ${row.email}`);
+                }                           
+            
+                if (!['IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum'].includes(row.unit)) {
+                    throw new Error(`Unit ${row.unit} tidak valid untuk user ${row.email}`);
+                }
+
                 const userExists = await Users.findOne({ 
                     where: { email: row.email } 
                 });

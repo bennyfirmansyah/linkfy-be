@@ -28,8 +28,13 @@ module.exports = (sequelize, DataTypes) => {
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
     },
-    session_id: {
-      type: DataTypes.UUID,
+    ip_address: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    user_agent: {
+      type: DataTypes.TEXT,
+      allowNull: false,
     },
     createdAt: {
       allowNull: false,
@@ -45,6 +50,13 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'AksesLogs',
     tableName: 'akses_logs',
+    indexes: [
+      {
+        unique: true,
+        fields: ['id_user', 'ip_address', 'createdAt'],
+        name: 'akses_logs_daily_unique'
+      }
+    ]
   });
   return AksesLogs;
 };

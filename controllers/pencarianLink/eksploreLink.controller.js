@@ -6,6 +6,7 @@ const eksploreLink = async (req, res) => {
   const userRole = req.user?.role || "public";
   const limit = Math.max(1, parseInt(req.query.limit) || 10);
   const offset = Math.max(0, parseInt(req.query.offset) || 0);
+  const kategori = req.query.kategori; // Ambil parameter kategori dari query string
 
   try {
     let whereCondition;
@@ -39,13 +40,18 @@ const eksploreLink = async (req, res) => {
       whereCondition = { visibilitas: "public" };
     }
 
+    // Tambahkan filter kategori jika ada
+    if (kategori) {
+      whereCondition.kategori = kategori; // Filter berdasarkan kolom kategori di tabel Links
+    }
+
     const links = await Links.findAll({
       where: whereCondition,
       include: {
         model: Users,
         attributes: ["nama", "email"],
       },
-      attributes: ["id", "judul", "url", "gambar", "deskripsi", "visibilitas", "updatedAt"],
+      attributes: ["id", "judul", "url", "gambar", "deskripsi", "visibilitas", "updatedAt", "kategori"],
       order: [["updatedAt", "DESC"]],
       limit,
       offset,

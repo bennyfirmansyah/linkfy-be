@@ -23,9 +23,10 @@ const seringDikunjungi = async (req, res) => {
       });
 
       if (!riwayatLink || riwayatLink.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Riwayat tidak ditemukan",
+        return res.status(200).json({
+          success: true,
+          message: "Belum ada riwayat kunjungan",
+          data: [],
         });
       }
 

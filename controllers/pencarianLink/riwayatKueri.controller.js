@@ -54,4 +54,45 @@ const riwayatKueri = async (req, res) => {
     }
 };
 
-module.exports = { riwayatKueri };
+const hapusRiwayatKueri = async (req, res) => {
+    const userId = req.user?.id;
+    const { query } = req.body;
+
+    try {
+        if (userId) {
+            await Riwayat.destroy({
+                where: {
+                    id_user: userId,
+                    query: query
+                }
+            });
+
+            return res.json({
+                success: true,
+                message: "Riwayat kueri berhasil dihapus"
+            });
+        } else {
+            const searchHistory = handleSearchHistory(req, res);
+            const updatedHistory = searchHistory.remove(query);
+            
+            return res.json({
+                success: true,
+                message: "Riwayat kueri berhasil dihapus",
+                data: updatedHistory
+            });
+        }
+    } catch (error) {
+        console.error("Error in hapusRiwayatKueri:", {
+            userId,
+            error: error.message,
+        });
+
+        return res.status(500).json({
+            success: false,
+            message: "Terjadi kesalahan pada server",
+            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+        });
+    }
+};
+
+module.exports = { riwayatKueri, hapusRiwayatKueri };
