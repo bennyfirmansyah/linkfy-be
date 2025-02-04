@@ -31,11 +31,15 @@ const countUserLogin = async (req, res) => {
         });
 
         return res.status(200).json({
-            user: {
-                total: totalUser,
-                byUnit: userByUnit,
-            },
-            umum: totalUmum,
+            success: true,
+            message: "Data retrieved successfully",
+            data: {
+                user: {
+                    total: totalUser,
+                    byUnit: userByUnit,
+                },
+                umum: totalUmum,
+            }
         });
     } catch (error) {
         return res.status(500).json({

@@ -19,6 +19,12 @@ class TextVectorizer {
       ['web', new Set(['website', 'webpage', 'web', 'situs'])],
       ['website', new Set(['web', 'webpage', 'website', 'situs'])],
       ['aplikasi', new Set(['app', 'application', 'software', 'perangkat lunak'])],
+      ['app', new Set(['app', 'application', 'software', 'perangkat lunak'])],
+      ['software', new Set(['app', 'application', 'software', 'perangkat lunak'])],
+      ['perangkat lunak', new Set(['app', 'application', 'software', 'perangkat lunak'])],
+      ['situs', new Set(['website', 'webpage', 'web', 'situs'])],
+      ['yt', new Set(['youtube', 'video', 'yt'])],
+      ['youtube', new Set(['yt', 'video', 'youtube'])],
       // Tambahkan relasi kata lainnya sesuai kebutuhan
     ]);
   }
