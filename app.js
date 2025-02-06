@@ -11,6 +11,7 @@ var { optionalAuth } = require('./middlewares/auth.middleware');
 
 var authRouter = require('./routes/auth.router');
 var userRouter = require('./routes/user.router');
+
 var app = express();
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 
 app.use(optionalAuth);
 app.use(logAccess);
+
 app.use('/auth', authRouter);
 app.use('/', userRouter);
 

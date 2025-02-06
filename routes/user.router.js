@@ -55,13 +55,20 @@ router.post('/add-feedback', optionalAuth, tambahFeedback);
 //modul dashboard
 var { countLink } = require('../controllers/dashboard/countLink.controller');
 var { countUserLogin } = require('../controllers/dashboard/countUserLogin.controller');
-var { getTodayStats, getHourlyStats, getRealTimeSummary } = require('../controllers/dashboard/countAccessLogs.controller');
+var { getTodayStats, getHourlyStats, getRealTimeSummary, getDailyStats } = require('../controllers/dashboard/countAccessLogs.controller');
+var { hourlyLink, dailyLink } = require('../controllers/dashboard/countTraficLink.controller');
+var { topLink, topLinkDaily } = require('../controllers/dashboard/countRiwayatLink.controller');
 
 router.get('/count-link', auth(['admin']), countLink);
 router.get('/count-user-login', auth(['admin']), countUserLogin);
 router.get('/hourly', auth(['admin']), getHourlyStats);
 router.get('/daily', auth(['admin']), getTodayStats);
 router.get('/summary', auth(['admin']), getRealTimeSummary);
+router.get('/daily-stats', auth(['admin']), getDailyStats);
+router.get('/hourly-link', auth(['admin']), hourlyLink);
+router.get('/daily-link', auth(['admin']), dailyLink);
+router.get('/top-link', auth(['admin']), topLink);
+router.get('/top-link-daily', auth(['admin']), topLinkDaily);
 
 
 module.exports = router;
