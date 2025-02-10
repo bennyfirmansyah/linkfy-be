@@ -1,5 +1,5 @@
 {
-  "development": {
+  "production": {
     "username": "postgres",
     "password": "123",
     "database": "search-engine",
@@ -15,12 +15,12 @@
     "dialect": "postgres",
     "port": 5432
   },
-  "production": {
+  "development": {
     "username": "postgres",
-    "password": "your_password",
-    "database": "database_production",
-    "host": "127.0.0.1",
-    "dialect": "postgres",
-    "port": 5432 
+    "password": "GKOmqCshDKwEnNzsaRkGDRFEvfqSwNCM",
+    "database": "railway",
+    "host": "monorail.proxy.rlwy.net",
+    "port": 36562,
+    "dialect": "postgres"
   }
 }
