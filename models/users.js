@@ -73,7 +73,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       unit: {
-        type: DataTypes.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum')
+        type: DataTypes.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum', 'BPS Pusat'),
       },
       createdAt: {
         allowNull: false,
