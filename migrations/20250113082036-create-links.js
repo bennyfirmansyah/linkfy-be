@@ -39,7 +39,7 @@ module.exports = {
         defaultValue: 'public',
       },
       kategori: {
-        type: Sequelize.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum'),
+        type: Sequelize.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum', 'BPS Pusat'),
         allowNull: false
       },
       vector: {
