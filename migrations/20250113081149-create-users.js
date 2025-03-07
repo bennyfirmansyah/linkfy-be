@@ -37,7 +37,7 @@ module.exports = {
         allowNull: false
       },
       unit: {
-        type: Sequelize.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum')
+        type: Sequelize.ENUM('IPDS', 'Sosial', 'Distribusi', 'Produksi', 'Neraca', 'Umum', 'BPS Pusat'),
       },
       createdAt: {
         allowNull: false,
